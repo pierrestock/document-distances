@@ -1,0 +1,7 @@
+archive/
+data/
+nt_solutions/
+nt_toolbox/
+word2vec/
+.DS_Store
+.ipynb_checkpoints
