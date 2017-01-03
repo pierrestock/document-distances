@@ -23,7 +23,7 @@ You can take a look at the iPython Notebook __toy_examples.ipynb__ that contains
 
 The algorithm is implemented in Python 3.5 using Tensorflow 0.11 in the file __compute_distance.py__. If you wish to run the __experiments.py__ file containing all the experiments made during this project, you will have to either 
 
-* Use the precomputed cost matrix __C_most_common_1000_2.p__ and the associated keys __keys_most_common_1000_2.p__
+* Use the precomputed cost matrix __C_most_common_1000_2__ and the associated keys __keys_most_common_1000_2__
 * Compute it yourself by chosing the number of words to include and the order of the norm in the embedding space by using the cost_matrix function defined in __compute_cost_matrix.py__ 
 
 The experiments may take time to run (especially on a CPU), I ran them on a NVIDIA K80 using AWS.
