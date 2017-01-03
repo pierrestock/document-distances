@@ -1,8 +1,23 @@
+# folders
 archive/
 data/
 nt_solutions/
 nt_toolbox/
 word2vec/
+
+# mac stuff
 .DS_Store
+
+# cache files
 .ipynb_checkpoints
 __pycache__/
+
+# tex files
+report/*.bib
+report/*.log
+report/*.aux
+report/*.bbl
+report/*.blg
+report/*.out
+report/*.gz
+

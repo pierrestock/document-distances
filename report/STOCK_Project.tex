@@ -1,0 +1,328 @@
+\documentclass{article}
+
+% if you need to pass options to natbib, use, e.g.:
+% \PassOptionsToPackage{numbers, compress}{natbib}
+% before loading nips_2016
+%
+% to avoid loading the natbib package, add option nonatbib:
+% \usepackage[nonatbib]{nips_2016}
+
+% \usepackage{nips_2016}
+
+% to compile a camera-ready version, add the [final] option, e.g.:
+\usepackage[final]{nips_2016}
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{bbold}
+\usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+
+\newcommand{\N}{\mathbf{N}}
+\newcommand{\Z}{\mathbf{Z}}
+\newcommand{\Q}{\mathbf{Q}}
+\newcommand{\R}{\mathbf{R}}
+\newcommand{\C}{\mathbf{C}}
+\newcommand{\K}{\mathbf{K}}
+\newcommand{\M}{\mathcal{M}}
+\newcommand{\Gl}{\mathrm{GL}}
+\newcommand{\im}{\mathrm{Im}\,}
+\renewcommand{\ker}{\mathrm{Ker}\,}
+\newcommand{\ssi}{\Longleftrightarrow}
+\newcommand{\1}{\mathbf{1}}
+\newcommand{\argmin}{\mathop{\mathrm{argmin}}}
+
+
+\title{Fast computation of document similarities using optimal transportation distances}
+
+% The \author macro works with any number of authors. There are two
+% commands used to separate the names and addresses of multiple
+% authors: \And and \AND.
+%
+% Using \And between authors leaves it to LaTeX to determine where to
+% break the lines. Using \AND forces a line break at that point. So,
+% if LaTeX puts 3 of 4 authors names on the first line, and the last
+% on the second line, try using \AND instead of \And before the third
+% author name.
+
+\author{
+  Pierre~Stock \\
+  {\'E}cole Normale Sup{\'e}rieure de Cachan, Paris\\
+  \texttt{pierre.stock@ens-paris-saclay.fr} \\
+  %% examples of more authors
+  %% \And
+  %% Coauthor \\
+  %% Affiliation \\
+  %% Address \\
+  %% \texttt{email} \\
+  %% \AND
+  %% Coauthor \\
+  %% Affiliation \\
+  %% Address \\
+  %% \texttt{email} \\
+  %% \And
+  %% Coauthor \\
+  %% Affiliation \\
+  %% Address \\
+  %% \texttt{email} \\
+  %% \And
+  %% Coauthor \\
+  %% Affiliation \\
+  %% Address \\
+  %% \texttt{email} \\
+}
+
+\begin{document}
+% \nipsfinalcopy is no longer used
+
+\maketitle
+
+\begin{abstract}
+We will focus on defining a reliable and fast-to-compute distance between two documents. A well-known approach consists in computing the optimal transportation distance between bag-of-words histograms for a given word dictionary. To allow for more flexibility and accuracy, word embedding metrics such as word2vec have been recently used to define the transportation cost between two words. However, the transportation problem becomes more and more expensive to solve when the size of the dictionary and thus the size of the documents increases: with more than a few hundred words, the computation cost becomes prohibitive. Our approach consisted in iteratively solving an entropic-regularized version of the transportation problem using the word2vec metric. We implemented a GPU-based version of this algorithm, allowing an extremely fast computation of distances between entire datasets of large documents. \end{abstract}
+
+\section{Introduction}
+
+Measuring the similarity between documents can often be seen as a preprocessing step to some learning tasks that have far-reaching applications, like news categorization and clustering  \cite{ontrup, greene}, sentiment analysis on customer reviews or social networks posts \cite{kusner}, song identification \cite{brochu} or multilingual document matching \cite{quadrianto}. 
+
+But can we define a distance or at least a reliable similarity measure between two documents ? Given a word dictionary $\mathcal D$, a simple approach to that question would be to use the bag-of-words (BoW) representations of those documents and to compute their similarity using a kernel (e.g. linear or Hellinger). 
+
+While this intuitive bag-of-features approach is widely used in computer vision \cite{rubner}, it suffers in our case from a major drawback : words have synonyms. We can assume that a customer using the words "unhappy, expensive, fail" and another using the words "waste, bad, disappointed" have rather the same (negative) opinion about a product, even if their histograms don't share any word in common. 
+
+Optimal transportation distances \cite{villani} provide a natural way to handle this problem, because they are parametrized by a ground metric, which allows to measure the similarity between two features (e.g. words). Given the good performance of optimal transportation distances in most data analysis tasks involving bag-of features, those distances have generated interest but their computational cost remains prohibitive. When no restrictions are placed upon the ground metric, the underlying linear program computing those distances scales at least in $\mathcal{O}(d^3\log(d))$  \cite{pele}.
+
+In this paper, we use a new family of transportation distances introduced by Cuturi \cite{cuturi} that look at the transportation problem from a maximum-entropy perspective by regularizing it with an entropic term. We use Mikolov's word embedding word2vec \cite{mikolov} as the ground metric, and adapted Sinkhorn-Knopp's fixed point iteration proposed by Cuturi \cite{cuturi} to compute the optimal transportation distance between two documents. Our main contributions are a GPU implementation of this algorithm\footnote{Available at \url{https://github.com/pierrestock/document-distances}} in Python using Tensorflow and a benchmark on some classical datasets. 
+
+\section{Related Work}
+
+Learning new low-dimensional document representations that further allow to compute a distance between them has been widely studied. The most classical representations have been introduced by Salton \cite{salton} and consisted in defining different combinations of corpus statistics like terms frequencies or counts and to weight and normalize them, yielding for instance bag-of-words or term frequency-inverse document frequency representations. %variations information probabilist
+
+However, those representations suffer from their frequent near-orthogonality \cite{greene}, preventing us from properly differentiating the texts and thus computing a reliable similarity measure. A more flexible approach is to use optimal transportation distances, which have been are widely studied by Villani in \cite{villani}, but are also known as Earth Mover's following the work of Rubner \textit{et al}.\ \cite{rubner} who successfully applied them to computer vision. 
+
+An important breakthrough in the last years has been the introduction of the word2vec model by Mikolov et al. \cite{mikolov}. The subsequent freely available model generates low-dimensional word embeddings using a 2-layers shallow neural network that has been trained on approximately 100 billion words. The authors demonstrated that the model learned high-quality word representations that are able to capture precise syntactic and semantic meanings: for instance, the relationship vec(\textit{king}) - vec(\textit{man}) + vec(\textit{women}) has an algebraic meaning since the obtained vector is very close to vec(\textit{queen}). 
+
+More recently, Quoc and Mikolov \cite{quoc} introduced doc2vec, an unsupervised algorithm that learns fixed-length feature representations from variable-length pieces of texts, such as sentences, paragraphs, and documents. However, their model has to be re-trained depending on the dataset we want to study. 
+
+Leveraging the word2vec embedding, Kusner \textit{et al}.\ \cite{kusner} introduced the the Word Mover's Distance (WMD) that measures the dissimilarity between two text documents as the optimal transportation distance using the euclidian distance naturally provided by the embedding space as the ground metric. %The authors show that the obtained metric is a particular instance of the Earth Mover's Distance, performing better than other metrics in document classification. 
+
+Their model has the advantage to be hyperparameter free and to be more flexible by adapting the dictionary to each document comparison (considering all the unique words in the set of the two documents) . However, because of the computational cost of the optimal transportation problem \cite{pele}, it is not naturally scalable to datasets of large documents. To circumvent this issue, the authors introduced several cheap lower bounds for their problem that allow to only compute the WMD of a small number of documents by discarding all the others. For very large documents (e.g. thousands of unique words), their approach remains computationally expensive.  
+
+Cuturi \cite{cuturi} considered the transportation problem from a maximum-entropy perspective and introduced an entropic regularization term to the transportation objective, and showed that the subsequent transportation problem could be solved very efficiently using matrix iterations, leveraging Sinkhorn-Knopp's matrix scaling algorithm and without any restriction placed upon the ground metric. Moreover, the algorithm (called Sinkhorn's algorithm) can be easily parallelized, allowing for fast and high-scale GPGPU computations. The author showed improved performance over classical optimal transportation distances on the MNIST benchmark problem. 
+
+Sinkhorn's algorithm has been further studied by Benamou \textit{et al}.\ \cite{benamou} who present a unified framework to numerically solve entropic approximations of several generalized optimal transport problems, using iterative Bergman projections and Dykstra's algorithm. Sinkhorn's algorithm has also been documented and implemented in Matlab (CPU version) by Peyr\'e in its Numerical Tours of Signal Processing \cite{peyre}. We used this code as a starting point for our Python implementation.
+
+%\cite{benamou}
+%\cite{solomon}
+%\cite{busche} ???
+%3 pages
+%Presentation of the problem(s). 
+%Previous works (at least a few citations). If relevant, include things that you have seen during the MVA course (or possibly other courses). 
+%Contributions. Why is the studied method different/better/worse/etc. than existing previous works. 
+%Main body (~10 pages) : 
+
+\section{Computing Document Distances}
+
+\subsection{Notations}
+
+Given a fixed word dictionary $\mathcal D = \{w_1, \dots, w_n\}$ of size $n$ and two documents composed uniquely of words belonging to $\mathcal D$, we can compute their respective bag-of-word representations as histograms of word counts $p$ and $q$, where $p_i$ and $q_i$ are the respective word counts associated to $w_i$. 
+
+Both $p$ and $q$ are then $L_1$ normalized and thus belong to the simplex in $\R^n$:
+ 
+ \[\Sigma_n = \{p\in\R^n ~|~ p^T\1_n = 1\}\] 
+ 
+ where $\1_n = (1,\dots, 1)^T \in \R^n$. We will refer to $p$ and $q$ as the original documents with a slight abuse of notation, and will thus define a similarity measure between $p$ and $q$.
+
+The polytope of couplings or policy matrixes between $p$ and $q \in \Sigma_n$ is defined as:
+
+\[\Pi(p,q) = \{\pi \in \R_+^{n\times n} ~|~ \pi\1_n = p, \pi^T\1_n = q\}\]
+
+and represents the set of all nonnegative matrixes whose lines sum to $p$ and whose columns sum to $q$. The matrix $\pi$ is often called the policy matrix as its coefficients $\pi_{i,j}$ intuitively denotes the \textit{amount} of the word $w_i$ in the first document which will be \textit{transferred} to the word $w_j$ appearing in the second document (those notions will be further formalized in this section). %As reminded in \cite{cuturi}, for X and Y two multinomial random variables taking values in {1, · · · , d}, each with distribution r and c respectively, the set U (r, c) contains all possible joint probabilities of (X, Y ).
+
+We denote $C \in \R^{n \times n}$ the cost matrix, where $C_{i,j} = C_{j,i}$ represents the cost of traveling from word $i$ to word $j$. More details on the construction of $C$ in section \ref{word} dedicated to the word embedding.
+
+The entropy of a policy matrix $\pi \in \Pi(p,q)$ is defined as:
+
+\[E(\pi) =  - \sum_{i,j = 1}^n \pi_{i,j}(\log(\pi_{i,j}) - 1)\]
+
+with the convention $0\log(0) = 0$ taking into account the fact that the word $w_i$ may not appear in the first document ($p_i = 0$) or the word $w_j$  may not appear in the second. Note that we added the constant $\sum_{i,j} \pi_{i,j} = 1$ (because both $p$ and $q$ are normalized) to the classical definition of the entropy for reasons that will be clear in the next sections.
+
+The Kullback-Leibler divergence between $\pi \in \R_+^{n\times n}$ and $\gamma \in (\R_{+}^*)^{n\times n}$ is defined as follows:
+
+\[\mathrm{KL}(\pi | \gamma) = \sum_{i,j = 1}^n\pi_{i,j}\left(\log \left(\frac{\pi_{i,j}}{\gamma_{i,j}}\right) - 1\right)\]
+
+and given a convex set $S \subset \R^{n\times n}$, we define the projection according to the Kullback-Leibler divergence as:
+
+\[P_S^{\mathrm{KL}}(\gamma) = \argmin_{\pi \in S}\mathrm{KL}(\pi | \gamma) \]
+
+
+We finally denote by $\odot$ and $\oslash$ the entry-wise multiplication (resp. division) of two matrixes when those operations can be performed.
+
+\subsection{Optimal Transportation Distances}
+
+Given a cost matrix C, the cost of mapping $p$ to $q$ using the transportation policy $\pi$ can be computed as $\langle \pi , C \rangle$. The classical transportation problem consists in finding the transportation policy $\pi^{\star}$ that minimizes this transportation cost:
+
+\[\pi^{\star} \in \argmin_{\pi \in \Pi(p,q)} \langle \pi , C \rangle\]
+
+The optimal transportation distance $d(p,q)$ between $p$ and $q$ is then defined as:
+
+\[d(p,q) =  \min_{\pi \in \Pi(p,q)} \langle \pi , C \rangle = \langle \pi^{\star} , C \rangle\]
+
+Villani showed that $d$ was indeed a distance when $C$ is a metric matrix, that is, $C_{i,j} \geq 0$, $C_{i,j} = C_{j,i}$, $C_{i,i} = 0$ and $C_{i,j} \leq C_{i,k} + C{k,j}$ for all $i,j$ and $k \in \{1,\dots,n\}$. We refer to the monograph \cite{villani} for more details. 
+
+\subsubsection{Entropic Regularization} 
+
+Following Cuturi \cite{cuturi}, we introduce a regularization term in the objective function, yielding the entropic-regularized transportation problem
+
+\[T_{\lambda}(p,q) =  \min_{\pi \in \Pi(p,q)} \langle \pi , C \rangle - \lambda E(\pi) \label{p} \tag{P}\]
+
+Intuitively, the regularization term forces the transportation policy $\pi$ to be smooth as the regularization strength $\lambda$ increases, and helps to stabilize the computation by forcing the solutions to have a spread support.
+
+In addition to those regularization properties, the entropic term defines a strongly convex problem with a unique solution \cite{benamou}, and allows for nice computation properties. Indeed, the problem \ref{p} can be recast as a projection according to the Kullback-Leibler divergence:
+
+\[T_{\lambda}(p,q)  = \lambda \min_{\pi \in \Pi(p,q)}\mathrm{KL}(\pi | \xi) \label{p'} \tag{P'} = \lambda P_{\Pi(p,q)}^{\mathrm{KL}}(\xi)\]
+
+with $\xi = e^{-C/\lambda}$ where the exponential is computed element-wise. A straightforward computation shows that $\xi$ minimizes the unconstrained problem:
+
+\[\min_{\pi \in \R_+^{n\times n}}\langle \pi , C \rangle - \lambda E(\pi)\]
+
+This explains somewhat why the constant $1$ has ben added to the definition of the entropy. Intuitively, because $\xi$ minimizes the unconstrained problem, we want to find the feasible policy $\pi \in \Pi(p,q)$ that is the closest to $\xi$ in the sense of the Kullback-Leibler divergence to solve the constrained problem \ref{p}.
+
+Supposing we found the minimizer $\pi^{\star}$, the distance between $p$ and $q$ can then easily be computed as:
+
+\[d_{\lambda}(p,q) = \langle \pi^{\star} , C \rangle  \]
+
+Note that necessarily, $d_{\lambda}(p,q) \geq d(p,q)$ because of the penalty term. 
+
+In the next section, we will introduce the notions needed to iteratively solve the recast problem \ref{p'}, namely iterative Bergman projections. An extensive study of those notions and a proof of convergence can be found in \cite{bausche}. 
+
+\subsubsection{Iterative Bergman Projections}
+
+We want to compute $P_S^{\mathrm{KL}}(\xi)$ where  $S$ is a non-empty intersection of affine constraint sets:
+\[S = S_1 \cap \dots \cap S_K\]
+This projection can be iteratively solved, starting from $\pi_0 = \xi$ and by iterating
+\[\forall i \geq 0, ~\pi_{i+1} = P_{S_i}^{\mathrm{KL}}(\pi_i)\]
+where the constraint sets are indexed modulo $K$, \textit{i.e.} $S_{i + K} = S_i$. Then, $\pi_i$ converges to $P_S^{\mathrm{KL}}(\xi)$ \cite{bausche}.
+
+When the convex sets are not affine subspaces, iterative Bergman projections do not always converge. Dykstra's algorithm, a more general procedure can be used instead. We refer to \cite{benamou, bausche} for further details. 
+
+\subsubsection{Sinkhorn's Algorithm}
+
+To apply iterative Bergman projections to solve problem \ref{p'}, we need to express $\Pi(p,q)$ as a non-empty intersection of affine constraint sets. This can be done using the following sets: 
+
+\[S_1 = \{\pi\in\R_+^{n\times n} ~|~ \pi\1_n = p\} ~~~ \mathrm{and} ~~~ S_2 = \{\pi\in\R_+^{n\times n} ~|~ \pi^T\1_n = q\}\]
+
+and by noticing that $\Pi(p,q) = S_1 \cap S_2$.
+
+Then, we need a close form for the projections according to the Kullback-Leibler divergence on those sets. They can be easily computed as:
+
+\[P_{S_1}^{\mathrm{KL}}(\pi) = \mathrm{diag}\left({p}\oslash(\pi\1_n)\right)\pi  ~~~ \mathrm{and} ~~~ P_{S_2}^{\mathrm{KL}}(\pi) =  \pi\mathrm{diag}\left({q}\oslash \left(\pi^T\1_n\right)\right)\]
+
+for any $\pi \in \R_+^{n\times n}$, so that projecting on either $S_1$ or $S_2$ simply amounts to properly normalize the rows or the columns of $\pi$.
+
+This property allows for a fast implementation of iterative Bergman projections using only basic operations on matrixes and row vectors (matrix or element-wise multiplication and division) as noted in \cite{benamou}. 
+
+The key remark is that the iterates $\pi_l$ always has the form:
+
+\[\pi_i = \mathrm{diag}(a_i)\xi \mathrm{diag}(b_i)\ \]
+
+where the vectors $a_i$ and $b_i \in \R^n$ satisfy $b_0 = \1_n$ and 
+
+\[a_i = p \oslash (\xi b_i) ~~~ \mathrm{and} ~~~ b_{i+1} = q \oslash (\xi^T a_i)\]
+
+This algorithm is called Sinkhorn-Knopp's fixed point iteration and was first introduced in \cite{sinkhorn}. It is summarized below and takes as inputs the two normalized histograms $p$ and $q$, the regularization parameter $\lambda$, the cost matrix $C$ and the number of iterations to perform. Note that it suffices to replace replace the vectors by matrixes of vectors to compute simultaneously the distances between large datasets of documents, as they all share the same dictionary and the same cost matrix.
+
+The gains to using GPUs appears clearly. Suppose the size of the dictionary is $n = $10,000 and we want to compute all the 4,950 pairwise similarities between $d = 100$ documents. Then, we could iterate in place in the GPU, which will be very efficient for the highly parallel task of repeatedly performing elementary operations between matrixes of size $n \times d(d-1)/2$. We implemented this algorithm\footnote{Available at \url{https://github.com/pierrestock/document-distances}}  to perform all pairwise comparisons between two datasets of documents in Python using Tensorflow and ran it on a ?? card. Further documentation is available online. 
+
+\begin{algorithm}
+\caption{Sinkhorn's algorithm}\label{sinkhorn}
+\begin{algorithmic}[1]
+\Statex \textbf{input} p, q, lambda, C, niter
+\Statex xi = exp($-$C $*$ C / lambda)
+\Statex b = ones(1, size(p))
+\Statex \textbf{for} i = 1..niter \textbf{do}
+\Statex ~~~~ a = p / (xi $*$ b)
+\Statex ~~~~ b = q / (xi.T $*$ a)
+\Statex \textbf{end for}
+\Statex pi = diag(a) $*$ xi $*$ diag(b)
+\Statex d = sum(C $*$ pi)
+\Statex \textbf{return} d
+\end{algorithmic}
+\end{algorithm}
+
+\subsubsection{Word2Vec Embedding} \label{word}
+
+Now that we are able to compute the solution of the problem \ref{p} and thus the distance between two documents $d_{\lambda}(p,q)$, we need to address one last issue regarding the cost matrix $C$. Recall that its coefficients $C_{i,j}$ indicate the distance between the words $w_i$ and $w_j$. 
+
+We will leverage the recent works of Mikolov \textit{et al}.\ \cite{mikolov} by embedding the words in a $300$-dimensional space. The distance between two words can then be computed using a given norm (e.g. $L_p$ with $p > 0$) in that space. By default, we will use the euclidian $L_2$ norm, but we will study the influence of the norm in section \ref{results}.
+
+The authors trained a 2-layers shallow neural network on approximately 100 billion words to predict the context of a given word, e.g. to predict of to words often appear nearby. The embedding is obtained as the weights of the Interestingly, the model learned high-quality word representations that are able to capture precise syntactic and semantic meanings. 
+
+The training objective of the Skip-gram model is to find word representations that are useful for predicting the surrounding words in a sentence or a document. 
+
+\section{Results} \label{results}
+
+We present the main results obtained using our GPU implementation of Sinkhorn's algorithm and study the influence of the regularization parameter, the embedding metric and we finally study the unbalanced case. 
+
+%Applications sentiment analysis and text clustering
+
+%Twitter Adjusted Rand Index
+
+\subsection{Setup}
+
+\textbf{Dictionary.} We used the 10,000 most common words in English as determined by n-gram frequency analysis of the Google's Trillion Word Corpus\footnote{Available at \url{https://github.com/first20hours/google-10000-english}}. According to analysis of the Oxford English Corpus, the 7,000 most common English lemmas account for approximately 90\% of usage, so a 10,000 word training corpus should be sufficient for practical training applications.
+
+\textbf{Distance matrix.} We used the freely-available pre-trained word2vec model\footnote{Available at \url{https://code.google.com/archive/p/word2vec/ }} to compute once for all the distance matrix using the $L_p$ norm for different values of $p$. By default and unless contrary indication, we use $p = 2$. 
+
+\textbf{Datasets.} We used the Reuters-21578 dataset\footnote{Available at \url{http://ana.cachopo.org/datasets-for-single-label-text-categorization}} which is widely used in text categorization research. It consists in documents appeared on the Reuters newswire in 1987 and were manually classified by personnel from Reuters Ltd. We use its R52 version, comprising 52 categories, 6,532 training documents and 2,568 test documents. 
+
+\textbf{Preprocessing.} The preprocessing steps include lowering all the words (no uppercases), removing the digits, tokenizing the documents and finally removing the stopwords in the SMART stopword list defined in \cite{salton}. Stopwords are words like \textit{the} or \textit{and} that appear very frequently in texts but that carry little to no meaning. 
+
+\textbf{Implementation.} We implemented Sinkhorn's algorithm in Python 3.5 using Tensorflow 0.12 and ran it on ??
+
+\textbf{Number of iterations.} We use a tolerance of $\varepsilon = 0.01$ on the $L_2$ norm of the difference of two successive iterations to calibrate the number of iterations on a few samples of a dataset and then ran the algorithm on the entire dataset while keeping this determined number of iterations. 
+
+\textbf{Evaluating the results.} We evaluated the $k$NN performance of our algorithm for $k = 1$ and $k = 5$ on the test sets. 
+
+\subsection{Influence of the Regularization Parameter $\lambda$}
+
+\subsection{Influence of the Embedding Metric}
+
+\subsection{Unbalanced Problem}
+
+GPU speedup ??
+
+\section{Conclusion and perspectives}
+
+As we have seen in this paper, entropic regularization of the optimal transportation problem has nice theoretical properties: it transforms the problem into a strongly convex one, thus ensuring the unicity of the solution, and it smoothes the optimal policy matrix by forcing it to have a sparse support as $\lambda$ gets large, thus seeking to maximize more and more the entropy of the solution. 
+
+Entropic regularization also presents some very nice practical properties, allowing to compute the solution of the optimal transportation problem using a Bergman iteration scheme. The obtained algorithm is easily implementable on GPUs to allow very fast and large-scale computations of distances between documents.
+
+Using our implementation of this algorithm in Python, we have shown that : summary of the result obtained: pros and cons (limitation, problems, error in the articles, etc)
+
+Possible extensions of this work include improving the fixed dictionary by including celebrity names for example and computing its optimal size and testing the performance of this algorithm on other datasets or other tasks like. 
+
+The main intrinsic limitation of this approach is that Sinkhorn's algorithm becomes unstable when the regularization parameter is small, because the algorithm involves computing terms of the form $e^{-x/\lambda}$, effect that is aggravated if we use float32 computations on the GPU to further speed up the computations. 
+
+An other limitation is that BoW features loose the ordering of the words in the documents, ordering that is only partially retrieved using the word2vec embedding by associating short distances to words that are similar, \textit{i.e.} that often appear nearby in the same context. 
+
+for two reasons: (i) since some of the quantities manipulated in the proposed algorithms have an order of e?1/? (in particular Gibbs distributions denoted ? in the following) they become smaller than machine precision whenever the regularization ? is small; (ii) more importantly, even if the first issue is taken care of by carrying out computations in the log domain, the convergence speed of iterative projec- tion methods degrades significantly as ? ? 0. 
+
+\subsubsection*{Acknowledgments}
+
+Gab + Server Cuturil
+
+\newpage
+
+%\small
+\bibliographystyle{unsrt}
+\bibliography{bibliography}
+
+\medskip
+
+\end{document}
