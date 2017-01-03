@@ -26,7 +26,7 @@ The algorithm is implemented in Python 3.5 using Tensorflow 0.11 in the file __c
 * Use the precomputed cost matrix __C_most_common_1000_2.p__ and the associated keys __keys_most_common_1000_2.p__
 * Compute it yourself by chosing the number of words to include and the order of the norm in the embedding space by using the cost_matrix function defined in __compute_cost_matrix.py__ 
 
-The experiments may take time to run (especially on a CPU), I ran them on a NVIDIA K80 using AWS. 
+The experiments may take time to run (especially on a CPU), I ran them on a NVIDIA K80 using AWS.
 
 ## Going further
 
