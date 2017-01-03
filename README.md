@@ -15,7 +15,7 @@ If you wish to use this code, you will have to install the following package:
 ```
 pip install gensim 
 ```
-The pretrained word2vec model is available [here](https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit) (1.5 GB !)
+The pretrained word2vec model is available [here](https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit) (1.5 GB !). You will need it for the toy examples and for computing some customized cost matrixes. 
 
 You can take a look at the iPython Notebook __toy_examples.ipynb__ that contains a very brief description of the algorithm, some fun properties of the word2vec metric and studies the influence of some parameters on a toy example. The toy data files are already in the __data__ folder.  
 
