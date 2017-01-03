@@ -5,7 +5,7 @@ import pickle as pkl
 
 from time import time
 
-def distance_gpu(D1, D2, gamma, niter, data_path, verbose = 0):
+def distance(D1, D2, gamma, niter, data_path, verbose = 0):
     """
     calculates all pairwise distances d(d1,d2) with:
         - d1 in D1 = [d11, d12, ...]
