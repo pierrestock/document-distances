@@ -5,7 +5,7 @@ import pickle as pkl
 
 from time import time
 
-def distance(D1, D2, lambd, niter, data_path, verbose = 0):
+def distance(D1, D2, lambd, niter, data_path, C_name = "C_most_common_1000_2.p", keys_name = "keys_most_common_1000_2.p", verbose = 0):
     """
     calculates all pairwise distances d(d1,d2) with:
         - d1 in D1 = [d11, d12, ...]
@@ -17,8 +17,8 @@ def distance(D1, D2, lambd, niter, data_path, verbose = 0):
     using tensorflow on gpu
     """
     # load distance matrix and associated keys
-    C = pkl.load(open(data_path + "C_most_common_5000.p", 'rb'))
-    keys = pkl.load(open(data_path + "keys_most_common_5000.p", 'rb'))
+    C = pkl.load(open(data_path + C_name, 'rb'))
+    keys = pkl.load(open(data_path + keys_name, 'rb'))
 
     # define constants
     tm = time()
@@ -133,4 +133,4 @@ def distance(D1, D2, lambd, niter, data_path, verbose = 0):
 
     # --- end of tf session --- #
 
-    return np.reshape(D, [d1, d2])
+    return D
