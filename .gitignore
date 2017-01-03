@@ -5,3 +5,5 @@ nt_toolbox/
 word2vec/
 .DS_Store
 .ipynb_checkpoints
+__pycache__/
+*.ipynb
