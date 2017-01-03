@@ -23,14 +23,14 @@ with open(data_path + "reuters_test.txt", encoding='utf-8') as f:
         reuters_test = reuters_test + [text]
         category_test = category_test + [category]
 
-# test 1 (must be OK))
-D = distance(reuters_test[:1],reuters_train[:1], 1, 100, data_path, verbose = 1)
+# test 1
+D = distance(reuters_test[:1], reuters_train[:1], 1, 100, data_path, verbose = 1)
 
-# test 2 (should be OK)
-D = distance(reuters_test[:1],reuters_train[:1000], 1, 100, data_path, verbose = 1)
+# test 2
+D = distance(reuters_test[:1], reuters_train[:1000], 1, 100, data_path, verbose = 1)
 
-# test 3 (memory issues?)
-D = distance(reuters_test[:1],reuters_train, 1, 100, data_path, verbose = 1)
+# test 3
+D = distance(reuters_test[:1], reuters_train, 1, 100, data_path, verbose = 1)
 
 # save results
 pkl.dump(D, open(data_path + "D_matrix.p", 'wb'))
