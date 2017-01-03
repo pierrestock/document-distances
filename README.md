@@ -1,6 +1,6 @@
 # How to compute document similarities ? 
 
-This repository is a Python implementation of a project consisting in computing document similarities. 
+This repository is a Tensorflow implementation of a project consisting in computing document similarities. 
 
 1. [Setup](#setup)
 
@@ -11,7 +11,11 @@ This repository is a Python implementation of a project consisting in computing 
  
 ## Setup 
 
-You can take a look at the iPython Notebook __toy_examples.ipynb__
+If you wish to usg this code, you will have to type the following commands in your favourite shell :
+```
+pip install gensim 
+```
+You can take a look at the iPython Notebook __toy_examples.ipynb__ that contains a very brief description of the algorithm, some fun properties of the word2vec metric and studies the influence of some parameters on some toy examples. 
 
 ## Playing around
 
