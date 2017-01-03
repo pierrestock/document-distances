@@ -14,3 +14,5 @@ This repository is a Python implementation of a project consisting in computing 
 ## Playing around
 
 ## Going further
+
+If you are interested in this topic, you can read the full pdf report (section *report*) 
