@@ -1,5 +1,5 @@
-How to compute document similarities ? 
-==============================================
+# How to compute document similarities ? 
+
 
 
 
