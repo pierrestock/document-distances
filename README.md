@@ -8,9 +8,9 @@ Approach :
 
 3. [Programming languages](#programming-languages)
 
-'''
+```
 python
-''' 
+ 
 ## Basic skills 
 
 ### Dvorak/BÉPO
