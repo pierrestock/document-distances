@@ -1,2 +1,5 @@
-# Fast computation of document similarities using optimal transportation distances
+How to compute document similarities ? 
+==============================================
+
+
 
