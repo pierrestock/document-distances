@@ -15,8 +15,8 @@ If you wish to usg this code, you will have to install the following package:
 ```
 pip install gensim 
 ```
-And the pretrained word2vec model available here: https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit (1.5 GB !)
-
+The pretrained word2vec model is available here: https://drive.google.com/file/d/0B7XkCwpI5KDYNlNUTTlSS21pQmM/edit (1.5 GB !)
+[link text itself]: http://www.reddit.com
 You can take a look at the iPython Notebook __toy_examples.ipynb__ that contains a very brief description of the algorithm, some fun properties of the word2vec metric and studies the influence of some parameters on some toy examples. 
 
 ## Playing around
