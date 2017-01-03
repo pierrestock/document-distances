@@ -1,35 +1,16 @@
 # How to compute document similarities ? 
 
-Approach : 
+This repository is a Python implementation of a project consisting in computing document similarities. 
 
-1. [Basic skills](#basic-skills)
+1. [Setup](#setup)
 
-2. [Basic tools](#basic-tools)
+2. [Playing around](#playing-around)
 
-3. [Programming languages](#programming-languages)
+3. [Going further](#going-further)
 
-```
-python
  
-## Basic skills 
+## Setup 
 
-### Dvorak/BÉPO
+## Playing around
 
-[The BÉPO keyboard](http://bepo.fr/wiki/Pr%C3%A9sentation)
-
-[Exercises to learn](http://www.typingstudy.com/fr-bepo_french-2/lesson/1)
-
-[To test typing speed](http://10fastfingers.com/typing-test/english)
-
-[reddit on dvorak and vim](https://www.reddit.com/r/vim/comments/257t8c/vim_for_dvorak/)
-
-
-### Touch Typing
-
-Progress : 
-
-initially in QWERTY 35-48 words per minute
-
-BÉPO 
-
-
+## Going further
