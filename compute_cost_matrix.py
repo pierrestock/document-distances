@@ -36,7 +36,7 @@ def cost_matrix(size_list, p_list, data_path):
 
     for size in size_list:
         for p in p_list:
-            print("Setting size = %d, p = %d" %(size, p))
+            print("Setting size = %d, p = %.2f" %(size, p))
 
             # if matrix already exists, do nothing
             C_current_name = "C_most_common_" + str(size) + "_" + str(p) + ".p"

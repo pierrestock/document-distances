@@ -24,6 +24,7 @@
 \usepackage{amsmath}
 \usepackage{algorithm}
 \usepackage[noend]{algpseudocode}
+\usepackage[pdftex]{graphicx}
 
 \newcommand{\N}{\mathbf{N}}
 \newcommand{\Z}{\mathbf{Z}}
@@ -105,26 +106,40 @@ Learning new low-dimensional document representations that further allow to comp
 
 However, those representations suffer from their frequent near-orthogonality \cite{greene}, preventing us from properly differentiating the texts and thus computing a reliable similarity measure. A more flexible approach is to use optimal transportation distances, which have been are widely studied by Villani in \cite{villani}, but are also known as Earth Mover's following the work of Rubner \textit{et al}.\ \cite{rubner} who successfully applied them to computer vision. 
 
-An important breakthrough in the last years has been the introduction of the word2vec model by Mikolov et al. \cite{mikolov}. The subsequent freely available model generates low-dimensional word embeddings using a 2-layers shallow neural network that has been trained on approximately 100 billion words. The authors demonstrated that the model learned high-quality word representations that are able to capture precise syntactic and semantic meanings: for instance, the relationship vec(\textit{king}) - vec(\textit{man}) + vec(\textit{women}) has an algebraic meaning since the obtained vector is very close to vec(\textit{queen}). 
+\medskip
 
-More recently, Quoc and Mikolov \cite{quoc} introduced doc2vec, an unsupervised algorithm that learns fixed-length feature representations from variable-length pieces of texts, such as sentences, paragraphs, and documents. However, their model has to be re-trained depending on the dataset we want to study. 
+\textbf{Word2vec}
 
-Leveraging the word2vec embedding, Kusner \textit{et al}.\ \cite{kusner} introduced the the Word Mover's Distance (WMD) that measures the dissimilarity between two text documents as the optimal transportation distance using the euclidian distance naturally provided by the embedding space as the ground metric. %The authors show that the obtained metric is a particular instance of the Earth Mover's Distance, performing better than other metrics in document classification. 
+An important breakthrough in the last years has been the introduction of the word2vec model by Mikolov et al. \cite{mikolov}. The subsequent freely available model generates low-dimensional word embeddings using a 2-layers shallow neural network that has been trained on approximately 100 billion words. 
 
-Their model has the advantage to be hyperparameter free and to be more flexible by adapting the dictionary to each document comparison (considering all the unique words in the set of the two documents) . However, because of the computational cost of the optimal transportation problem \cite{pele}, it is not naturally scalable to datasets of large documents. To circumvent this issue, the authors introduced several cheap lower bounds for their problem that allow to only compute the WMD of a small number of documents by discarding all the others. For very large documents (e.g. thousands of unique words), their approach remains computationally expensive.  
+The authors demonstrated that the model learned high-quality word representations that are able to capture precise syntactic and semantic meanings: for instance, the relationship vec(\textit{king}) - vec(\textit{man}) + vec(\textit{women}) has an algebraic meaning since the obtained vector is very close to vec(\textit{queen}). See Fig \ref{tsne} where semantically close words are in fact spatially close\footnote{Source: \url{http://www.trivial.io/word2vec-on-databricks/}} (don't hesitate to zoom in).
 
-Cuturi \cite{cuturi} considered the transportation problem from a maximum-entropy perspective and introduced an entropic regularization term to the transportation objective, and showed that the subsequent transportation problem could be solved very efficiently using matrix iterations, leveraging Sinkhorn-Knopp's matrix scaling algorithm and without any restriction placed upon the ground metric. Moreover, the algorithm (called Sinkhorn's algorithm) can be easily parallelized, allowing for fast and high-scale GPGPU computations. The author showed improved performance over classical optimal transportation distances on the MNIST benchmark problem. 
+More recently, Quoc and Mikolov \cite{quoc} introduced doc2vec, an unsupervised algorithm that learns fixed-length feature representations from variable-length pieces of texts, such as sentences, paragraphs, and documents. However, their model has to be re-trained depending on the dataset under study. 
 
-Sinkhorn's algorithm has been further studied by Benamou \textit{et al}.\ \cite{benamou} who present a unified framework to numerically solve entropic approximations of several generalized optimal transport problems, using iterative Bergman projections and Dykstra's algorithm. Sinkhorn's algorithm has also been documented and implemented in Matlab (CPU version) by Peyr\'e in its Numerical Tours of Signal Processing \cite{peyre}. We used this code as a starting point for our Python implementation.
+\begin{figure}[H]
+   \includegraphics[width=.8\linewidth]{tsne} 
+   \centering
+   \caption{t-SNE projection of some words using the word2vec embedding space}
+   \label{tsne}
+\end{figure}
 
-%\cite{benamou}
-%\cite{solomon}
-%\cite{busche} ???
-%3 pages
-%Presentation of the problem(s). 
-%Previous works (at least a few citations). If relevant, include things that you have seen during the MVA course (or possibly other courses). 
-%Contributions. Why is the studied method different/better/worse/etc. than existing previous works. 
-%Main body (~10 pages) : 
+\newpage
+
+\textbf{Word Mover's Distance}
+
+ Leveraging the word2vec embedding, Kusner \textit{et al}.\ \cite{kusner} introduced the the Word Mover's Distance (WMD) that measures the dissimilarity between two text documents as the optimal transportation distance using the euclidian distance naturally provided by the embedding space as the ground metric. %The authors show that the obtained metric is a particular instance of the Earth Mover's Distance, performing better than other metrics in document classification. 
+
+Their model has the advantage to be hyperparameter free and to be more flexible by adapting the dictionary to each document comparison (considering all the unique words in the set of the two documents) . However, because of the computational cost of the optimal transportation problem \cite{pele}, it is not naturally scalable to datasets of large documents. 
+
+To circumvent this issue, the authors introduced several cheap lower bounds for their problem that allow to only compute the WMD of a small number of documents by discarding all the others. For very large documents (e.g. thousands of unique words), their approach remains computationally expensive.  
+
+\medskip
+
+\textbf{Sinkhorn's Algorithm}
+
+Cuturi \cite{cuturi} considered the transportation problem from a maximum-entropy perspective and introduced an entropic regularization term to the transportation objective, and showed that the subsequent transportation problem could be solved very efficiently using matrix iterations, leveraging Sinkhorn-Knopp's matrix scaling algorithm and without any restriction placed upon the ground metric. Moreover, the algorithm (called Sinkhorn's algorithm) can be easily parallelized, allowing for fast and high-scale GPGPU computations. 
+
+Sinkhorn's algorithm has been further studied by Benamou \textit{et al}.\ \cite{benamou} who present a unified framework to numerically solve entropic approximations of several generalized optimal transport problems, using iterative Bergman projections and Dykstra's algorithm. Sinkhorn's algorithm has also been documented by Peyr\'e in its Numerical Tours of Signal Processing \cite{peyre}.
 
 \section{Computing Document Distances}
 
@@ -237,7 +252,7 @@ where the vectors $a_i$ and $b_i \in \R^n$ satisfy $b_0 = \1_n$ and
 
 This algorithm is called Sinkhorn-Knopp's fixed point iteration and was first introduced in \cite{sinkhorn}. It is summarized below and takes as inputs the two normalized histograms $p$ and $q$, the regularization parameter $\lambda$, the cost matrix $C$ and the number of iterations to perform. Note that it suffices to replace replace the vectors by matrixes of vectors to compute simultaneously the distances between large datasets of documents, as they all share the same dictionary and the same cost matrix.
 
-The gains to using GPUs appears clearly. Assume the size of the dictionary is $n = $10,000 and we want to compute all the 4,950 pairwise similarities between $d = 100$ documents. Then, we could iterate in place in the GPU, which will be very efficient for the highly parallel task of repeatedly performing elementary operations between matrixes of size $n \times d(d-1)/2$. We implemented this algorithm\footnote{Available at \url{https://github.com/pierrestock/document-distances}}  to perform all pairwise comparisons between two datasets of documents in Python using Tensorflow and ran it on a NVIDIA K80 card. Further documentation is available online. 
+The gains to using GPUs appears clearly. Assume the size of the dictionary is $n = $10,000 and we want to compute all the 4,950 pairwise similarities between $d = 100$ documents. Then, we could iterate in place in the GPU, which will be very efficient for the highly parallel task of repeatedly performing elementary operations between matrixes of size $n \times d(d-1)/2$. We implemented this algorithm to perform all pairwise comparisons between two datasets of documents in Python using Tensorflow and ran it on a NVIDIA K80 card. Further documentation is available online. 
 
 \begin{algorithm}
 \caption{Sinkhorn's algorithm}\label{sinkhorn}
@@ -261,7 +276,14 @@ Now that we are able to compute the solution of the problem \ref{p} and thus the
 
 We will leverage the recent works of Mikolov \textit{et al}.\ \cite{mikolov} by embedding the words in a $300$-dimensional space. The distance between two words can then be computed using a given norm (e.g. $L_p$ with $p > 0$) in that space. By default, we will use the euclidian $L_2$ norm, but we will study the influence of the norm in section \ref{results}.
 
-The authors trained a 2-layers shallow neural network on approximately 100 billion words to predict the context of a given word, e.g. to predict of to words often appear nearby. The embedding is obtained as the weights of hidden layer. Interestingly, the model learned high-quality word representations that are able to capture precise syntactic and semantic meanings. 
+The authors trained a 2-layers shallow neural network on approximately 100 billion words to predict the context of a given word, e.g. to predict of to words often appear nearby. The embedding is obtained as the weights of hidden layer. Interestingly, the model learned high-quality word representations that are able to capture precise syntactic and semantic meanings. See Fig \ref{word2vec} for an illustration on Countries and Capitals. 
+
+\begin{figure}[H]
+   \includegraphics[width=.6\linewidth]{word2vec.png} 
+   \centering
+   \caption{PCA projections on some Country/Capital pairs}
+   \label{word2vec}
+\end{figure}
 
 \section{Results} \label{results}
 
@@ -285,7 +307,7 @@ We present the main results obtained using our GPU implementation of Sinkhorn's 
 
 \textbf{Number of iterations.} We use a tolerance of $\varepsilon = 0.01$ on the $L_2$ norm of the difference of two successive iterations to calibrate the number of iterations on a few samples of a dataset and then ran the algorithm on the entire dataset while keeping this determined number of iterations. 
 
-\textbf{Evaluating the results.} We evaluated the $k$-NN performance of our algorithm for $k = 1$ and $k = 5$ on the test sets. 
+\textbf{Evaluating the results.} We evaluated the $k$-NN performance of our algorithm for different values of $k$ ranging from $k = 1$ to $20$ on the test sets. 
 
 \subsection{GPU Speedup}
 
@@ -293,7 +315,22 @@ We ran our implementation
 
 \subsection{Influence of the Regularization Parameter $\lambda$}
 
+
+\begin{figure}[H]
+   \includegraphics[width=.5\linewidth]{lambda.png} 
+   \centering
+   \caption{Influence of the regularization parameter $\lambda$}
+   \label{lambda}
+\end{figure}
+
 \subsection{Influence of the Embedding Metric}
+
+\begin{figure}[H]
+   \includegraphics[width=.5\linewidth]{lambda.png} 
+   \centering
+   \caption{Influence of the norm in the embedding space}
+   \label{p}
+\end{figure}
 
 \section{Conclusion and perspectives}
 
@@ -303,15 +340,11 @@ Entropic regularization also presents some very nice practical properties, allow
 
 Using our implementation of this algorithm in Python, we have shown that : summary of the result obtained: pros and cons (limitation, problems, error in the articles, etc)
 
-Possible extensions of this work include improving the fixed dictionary by including celebrity names for example and computing its optimal size and testing the performance of this algorithm on other datasets or other tasks like. 
+Possible extensions of this work include improving the fixed dictionary by including celebrity names for example and computing its optimal size and testing the performance of this algorithm on other datasets or other tasks like sentiment analysis. 
 
 The main intrinsic limitation of this approach is that Sinkhorn's algorithm becomes unstable when the regularization parameter is small, because the algorithm involves computing terms of the form $e^{-x/\lambda}$, effect that is aggravated if we use float32 computations on the GPU to further speed up the computations. 
 
-An other limitation is that BoW features loose the ordering of the words in the documents, ordering that is only partially retrieved using the word2vec embedding by associating short distances to words that are similar, \textit{i.e.} that often appear nearby in the same context. 
-
-%\subsubsection*{Acknowledgments}
-
-%We thank Gabriel Peyr\'e for having proposed this very nice subject and for his advice.
+An other limitation is that BoW features loose the ordering of the words in the documents, ordering that is only partially retrieved using the word2vec embedding by associating short distances to words that are similar, \textit{i.e.} that often appear nearby in the same context. Long Short-Term Memory Networks have been introduced to take the context of a given word more into account.
 
 \newpage
 
@@ -319,6 +352,18 @@ An other limitation is that BoW features loose the ordering of the words in the 
 \bibliographystyle{unsrt}
 \bibliography{bibliography}
 
-\medskip
-
 \end{document}
+
+
+\begin{figure}[H]
+\begin{minipage}[c]{.46\linewidth}
+    \includegraphics[width=8cm]{pr_4.png} 
+    \centering
+   \caption{Sparse recovery , P/N = 1/4}
+\end{minipage} \hfill
+\begin{minipage}[c]{.46\linewidth}
+    \includegraphics[width=8cm]{pr_5.png}    
+    \centering
+    \caption{Sparse recovery , P/N = 1/5}
+ \end{minipage} \hfill
+\end{figure}

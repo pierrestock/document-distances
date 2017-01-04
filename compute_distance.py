@@ -5,7 +5,7 @@ import pickle as pkl
 
 from time import time
 
-def distance(D1, D2, lambd, niter, data_path, C_name = "C_most_common_1000_2.p", keys_name = "keys_most_common_1000_2.p", verbose = 0):
+def distance(D1, D2, lambd, niter, data_path, C_name = "C_most_common_1000_2.p", keys_name = "keys_most_common_1000_2.p", precision = "float64", verbose = 0):
     """
     calculates all pairwise distances d(d1,d2) with:
         - d1 in D1 = [d11, d12, ...]
@@ -16,6 +16,7 @@ def distance(D1, D2, lambd, niter, data_path, C_name = "C_most_common_1000_2.p",
         - verbose = {0: display nothing, 1: display intermedidate computation times}
     using tensorflow on gpu
     """
+
     # load distance matrix and associated keys
     C = pkl.load(open(data_path + C_name, 'rb'))
     keys = pkl.load(open(data_path + keys_name, 'rb'))
@@ -65,21 +66,22 @@ def distance(D1, D2, lambd, niter, data_path, C_name = "C_most_common_1000_2.p",
     tm = time()
 
     # --- beginning of tf session --- #
-    with tf.Session() as sess:
+    with tf.Graph().as_default() as g:
+        with tf.Session() as sess:
 
             #----------------- initialize graphs -----------------#
             # define constants
-            P = tf.constant(P, dtype='float32')
-            Q = tf.constant(Q, dtype='float32')
-            C = tf.constant(C, dtype='float32')
+            P = tf.constant(P, dtype = precision)
+            Q = tf.constant(Q, dtype = precision)
+            C = tf.constant(C, dtype = precision)
 
             # define placeholders
             idx = tf.placeholder(dtype = 'int32', shape = None)
 
             # define variables
-            xi = tf.Variable(C, dtype = 'float32')
-            A = tf.Variable(tf.ones([d1 * d2, n], dtype='float32'), dtype='float32')
-            B = tf.Variable(tf.ones([d1 * d2, n], dtype='float32'), dtype='float32')
+            xi = tf.Variable(C, dtype = precision)
+            A = tf.Variable(tf.ones([d1 * d2, n], dtype = precision), dtype = precision)
+            B = tf.Variable(tf.ones([d1 * d2, n], dtype = precision), dtype = precision)
 
             # define graphs
             init = tf.initialize_all_variables()
@@ -96,6 +98,9 @@ def distance(D1, D2, lambd, niter, data_path, C_name = "C_most_common_1000_2.p",
             B_row_as_row = tf.reshape(tf.slice(B, [idx, 0], [1, -1]), [1, -1])
             compute_transp = tf.mul(A_row_as_col, tf.mul(xi, B_row_as_row)) # note that tf.mul supports broadcasting
             compute_D = tf.reduce_sum(tf.mul(C, compute_transp))
+
+            # finalize the graph (no new operations can be added) to prevent possible slowdowns in the loops
+            g.finalize()
 
             #-------------------- run graphs --------------------#
             # initialize variables
