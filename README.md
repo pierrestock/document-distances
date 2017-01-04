@@ -30,4 +30,4 @@ The experiments may take time to run (especially on a CPU), I ran them on a NVID
 
 ## Going further
 
-If you are interested in this topic, you can read the full pdf report (__report__ folder) that details some theoretical aspects, the methodology and the experimental results on large datasets. A bibliography is included if you want to go deeper on the theoretical side. 
+If you are interested in this topic, you can read the full pdf report (__report__ folder) that details some theoretical aspects, the methodology and the experimental results on large datasets. A bibliography is included if you want to dig deeper on the theoretical side. 
