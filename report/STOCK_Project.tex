@@ -22,8 +22,7 @@
 \usepackage{microtype}      % microtypography
 \usepackage{bbold}
 \usepackage{amsmath}
-\usepackage{algorithm}
-\usepackage[noend]{algpseudocode}
+ 
 \usepackage[pdftex]{graphicx}
 
 \newcommand{\N}{\mathbf{N}}
@@ -287,15 +286,11 @@ The authors trained a 2-layers shallow neural network on approximately 100 billi
 
 \section{Results} \label{results}
 
-We present the main results obtained using our GPU implementation of Sinkhorn's algorithm and study the influence of the regularization parameter, the embedding metric and we finally study the unbalanced case. 
-
-%Applications sentiment analysis and text clustering
-
-%Twitter Adjusted Rand Index
+We present the main results obtained using our GPU implementation of Sinkhorn's algorithm and study the influence of the regularization parameter and the embedding metric. 
 
 \subsection{Setup}
 
-\textbf{Dictionary.} We used the 10,000 most common words in English as determined by n-gram frequency analysis of the Google's Trillion Word Corpus\footnote{Available at \url{https://github.com/first20hours/google-10000-english}}. According to analysis of the Oxford English Corpus, the 7,000 most common English lemmas account for approximately 90\% of usage, so a 10,000 word training corpus should be sufficient for practical training applications.
+\textbf{Dictionary.} We used the 10,000 most common words in English as determined by n-gram frequency analysis of the Google's Trillion Word Corpus\footnote{Available at \url{https://github.com/first20hours/google-10000-english}}. According to analysis of the Oxford English Corpus, the 7,000 most common English lemmas account for approximately 90\% of usage. In practice and unless mention of the contrary, we use a 5,000 word corpus.  
 
 \textbf{Distance matrix.} We used the freely-available pre-trained word2vec model\footnote{Available at \url{https://code.google.com/archive/p/word2vec/ }} to compute once for all the distance matrix using the $L_p$ norm for different values of $p$. Note that $p$ may not necessarily be an integer, we assume $p > 0$. By default and unless contrary indication, we use $p = 2$. 
 
@@ -303,18 +298,36 @@ We present the main results obtained using our GPU implementation of Sinkhorn's 
 
 \textbf{Preprocessing.} The preprocessing steps include lowering all the words (no uppercases), removing the digits, tokenizing the documents and finally removing the stopwords in the SMART stopword list defined in \cite{salton}. Stopwords are words like \textit{the} or \textit{and} that appear very frequently in texts but that carry little to no meaning. 
 
-\textbf{Implementation.} We implemented Sinkhorn's algorithm in Python 3.5 using Tensorflow 0.12 and ran it on a NVIDIA K80\footnote{We used a p2.xlarge instance on AWS thanks to the GitHub Student Developer Pack Program}.
+\textbf{Implementation.} We implemented Sinkhorn's algorithm in Python 3.5 using Tensorflow 0.12 and ran it on a NVIDIA K80\footnote{We used a p2.xlarge instance on AWS thanks to the GitHub Student Developer Pack Program}. We gained a factor 100  in time over the entire computation compared to CPU implementation. 
 
 \textbf{Number of iterations.} We use a tolerance of $\varepsilon = 0.01$ on the $L_2$ norm of the difference of two successive iterations to calibrate the number of iterations on a few samples of a dataset and then ran the algorithm on the entire dataset while keeping this determined number of iterations. 
 
 \textbf{Evaluating the results.} We evaluated the $k$-NN performance of our algorithm for different values of $k$ ranging from $k = 1$ to $20$ on the test sets. 
 
-\subsection{GPU Speedup}
+\subsection{Toy example}
 
-We ran our implementation 
+We ran our implementation on a toy example made of 4 news articles from the New York Times (available online). Two articles were about sports (one about football, the other about tennis), and two others about politics (domestic and foreign). 
+
+As expected, the articles are more similar to the other article belonging to their category. Note also that beyond a certain value of the regularization parameter, the documents are more similar and the similarity order may change due to the entropic term favourising minimum information. 
+
+On this toy example, the regularization parameter seems to play a major role: not properly tuning it may change the classification result, whereas the embedding norm parameter only seems to contribute to better separating the documents between them. 
+
+\begin{figure}[H]
+\begin{minipage}[c]{.46\linewidth}
+    \includegraphics[width=7cm]{toy_lambda.png} 
+    \centering
+   \caption{Influence of $\lambda$}
+\end{minipage} \hfill
+\begin{minipage}[c]{.46\linewidth}
+    \includegraphics[width=6.5cm]{toy_norm.png}    
+    \centering
+    \caption{Influence of the order norm}
+ \end{minipage} \hfill
+\end{figure}
 
 \subsection{Influence of the Regularization Parameter $\lambda$}
 
+We observe that the value $k = 10$ gives the best classification error (20.08) for a small value of the regularization parameter. 
 
 \begin{figure}[H]
    \includegraphics[width=.5\linewidth]{lambda.png} 
@@ -325,7 +338,7 @@ We ran our implementation
 
 \subsection{Influence of the Embedding Metric}
 
-Non-convex norms not ok wtf ?
+The embedding metric order $p$ should be as small as possible while keeping the norm convex(e.g. $p = 1$), whereas values of $p > 3$ are not substantially changing the classification error. 
 
 \begin{figure}[H]
    \includegraphics[width=.5\linewidth]{p.png} 
@@ -340,7 +353,7 @@ As we have seen in this paper, entropic regularization of the optimal transporta
 
 Entropic regularization also presents some very nice practical properties, allowing to compute the solution of the optimal transportation problem using a Bergman iteration scheme. The obtained algorithm is easily implementable on GPUs to allow very fast and large-scale computations of distances between documents.
 
-Using our implementation of this algorithm in Python, we have shown that : summary of the result obtained: pros and cons (limitation, problems, error in the articles, etc)
+Using our implementation of this algorithm in Python, we have shown that the regularization parameter has to be tuned carefully according to type of document to classify, and also that the embedding metric played an important role in trying to separate the documents. 
 
 Possible extensions of this work include improving the fixed dictionary by including celebrity names for example and computing its optimal size and testing the performance of this algorithm on other datasets or other tasks like sentiment analysis. 
 
@@ -355,7 +368,6 @@ An other limitation is that BoW features loose the ordering of the words in the 
 \bibliography{bibliography}
 
 \end{document}
-
 
 \begin{figure}[H]
 \begin{minipage}[c]{.46\linewidth}
