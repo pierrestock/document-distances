@@ -40,70 +40,70 @@ def compute_knn_pred(pred, k):
     counter = Counter(pred[:k])
     return max(counter, key=counter.get)
 
-# # influence of lambda
-# lambda_list = np.logspace(-1,2,10)
-# k_list = [1, 3, 5, 10, 20]
-# niter = 100
-# test_size = len(docs_test)
-# err = np.zeros([len(lambda_list), len(k_list)])
-#
-# for i in range(len(lambda_list)):
-#     tm = time()
-#     lambd = lambda_list[i]
-#     print("Setting lambda to %.2f" %lambd)
-#
-#     # loop in the test set
-#     for j in range(test_size):
-#         doc_to_test = docs_test[j]
-#         target = category_test[j]
-#         D = distance([doc_to_test], docs_train, lambd, niter, data_path)
-#         idx = np.argsort(D)
-#         pred = category_train[idx]
-#         print(D[:3])
-#         err[i, :] += [(compute_knn_pred(pred, k_curr) != target) for k_curr in k_list]
-#
-#     # aggregate results
-#     err[i, :] = err[i, :] / test_size
-#     print("Elapsed = %.2f" %(time() - tm))
-#
-# pkl.dump(err, open(data_path + "err_lambda.p", 'wb'))
+#--------------- influence of lambda  ---------------#
+lambda_list = np.logspace(-1,2,10)
+k_list = [1, 3, 5, 10, 20]
+niter = 100
+test_size = len(docs_test)
+err = np.zeros([len(lambda_list), len(k_list)])
 
-# influence of the embedding norm
-# size = [1000]
-# niter = 100
-# p_list = np.logspace(0, 1, 10)
-# k_list = [1, 3, 5, 10, 20]
-# test_size = len(docs_test)
-# err = np.zeros([len(p_list), len(k_list)])
-#
-# # compute cost matrixes
-# C_names, key_names = cost_matrix(size, p_list, data_path)
-# #C_names = ["C_most_common_1000_" + str(p) + ".p" for p in p_list]
-# #key_names = ["keys_most_common_1000_"  + str(p) + ".p" for p in p_list]
-#
-# for i in range(len(p_list)):
-#     tm = time()
-#     p = p_list[i]
-#     print("Setting p to %.2f" %p)
-#
-#     # loop in the test set
-#     for j in range(test_size):
-#         doc_to_test = docs_test[j]
-#         target = category_test[j]
-#         D = distance([doc_to_test], docs_train, 100, niter, data_path, C_name = C_names[i], keys_name = key_names[i])
-#         idx = np.argsort(D)
-#         pred = category_train[idx]
-#         print(D[:3])
-#         err[i, :] += [(compute_knn_pred(pred, k_curr) != target) for k_curr in k_list]
-#
-#     # aggregate results
-#     err[i, :] = err[i, :] / test_size
-#     print("Elapsed = %.2f" %(time() - tm))
-#
-# pkl.dump(err, open(data_path + "err_p.p", 'wb'))
+for i in range(len(lambda_list)):
+    tm = time()
+    lambd = lambda_list[i]
+    print("Setting lambda to %.2f" %lambd)
+
+    # loop in the test set
+    for j in range(test_size):
+        doc_to_test = docs_test[j]
+        target = category_test[j]
+        D = distance([doc_to_test], docs_train, lambd, niter, data_path)
+        idx = np.argsort(D)
+        pred = category_train[idx]
+        print(D[:3])
+        err[i, :] += [(compute_knn_pred(pred, k_curr) != target) for k_curr in k_list]
+
+    # aggregate results
+    err[i, :] = err[i, :] / test_size
+    print("Elapsed = %.2f" %(time() - tm))
+
+pkl.dump(err, open(data_path + "err_lambda.p", 'wb'))
+
+ #--------------- influence of the embedding norm  ---------------#
+size = [1000]
+niter = 100
+p_list = np.logspace(0, 1, 10)
+k_list = [1, 3, 5, 10, 20]
+test_size = len(docs_test)
+err = np.zeros([len(p_list), len(k_list)])
+
+# compute cost matrixes
+C_names, key_names = cost_matrix(size, p_list, data_path)
+#C_names = ["C_most_common_1000_" + str(p) + ".p" for p in p_list]
+#key_names = ["keys_most_common_1000_"  + str(p) + ".p" for p in p_list]
+
+for i in range(len(p_list)):
+    tm = time()
+    p = p_list[i]
+    print("Setting p to %.2f" %p)
+
+    # loop in the test set
+    for j in range(test_size):
+        doc_to_test = docs_test[j]
+        target = category_test[j]
+        D = distance([doc_to_test], docs_train, 100, niter, data_path, C_name = C_names[i], keys_name = key_names[i])
+        idx = np.argsort(D)
+        pred = category_train[idx]
+        print(D[:3])
+        err[i, :] += [(compute_knn_pred(pred, k_curr) != target) for k_curr in k_list]
+
+    # aggregate results
+    err[i, :] = err[i, :] / test_size
+    print("Elapsed = %.2f" %(time() - tm))
+
+pkl.dump(err, open(data_path + "err_p.p", 'wb'))
 
 
-# infuence of the size of the dictionary
+# --------------- infuence of the size of the dictionary ---------------#
 # influence of the embedding norm
 size_list = [1000, 2000, 3000, 5000, 1000]
 niter = 100

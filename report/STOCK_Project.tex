@@ -22,6 +22,7 @@
 \usepackage{microtype}      % microtypography
 \usepackage{bbold}
 \usepackage{amsmath}
+\usepackage{float}
  
 \usepackage[pdftex]{graphicx}
 
@@ -38,7 +39,8 @@
 \newcommand{\ssi}{\Longleftrightarrow}
 \newcommand{\1}{\mathbf{1}}
 \newcommand{\argmin}{\mathop{\mathrm{argmin}}}
-
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
 
 \title{Fast computation of document similarities using optimal transportation distances}
 
@@ -327,7 +329,7 @@ On this toy example, the regularization parameter seems to play a major role: no
 
 \subsection{Influence of the Regularization Parameter $\lambda$}
 
-We observe that the value $k = 10$ gives the best classification error (20.08) for a small value of the regularization parameter. 
+We observe that the value $k = 10$ gives the best classification error (20.08$\%$) for a small value of the regularization parameter. 
 
 \begin{figure}[H]
    \includegraphics[width=.5\linewidth]{lambda.png} 
